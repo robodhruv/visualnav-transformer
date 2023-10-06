@@ -1,4 +1,4 @@
-name: vint_deployment
+name: nomad_train
 channels:
 - pytorch
 - conda-forge

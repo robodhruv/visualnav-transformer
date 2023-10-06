@@ -14,17 +14,25 @@ from torchvision import transforms
 import torch.backends.cudnn as cudnn
 from warmup_scheduler import GradualWarmupScheduler
 
+from diffusers.schedulers.scheduling_ddpm import DDPMScheduler
+from diffusers.optimization import get_scheduler
+
 """
 IMPORT YOUR MODEL HERE
 """
-from vint_train.models.gnm import GNM
-from vint_train.models.vint import ViNT
+from vint_train.models.gnm.gnm import GNM
+from vint_train.models.vint.vint import ViNT
+from vint_train.models.vint.vit import ViT
+from vint_train.models.nomad.nomad import NoMaD, DenseNetwork
+from vint_train.models.nomad.nomad_vint import NoMaD_ViNT, replace_bn_with_gn
+from diffusion_policy.model.diffusion.conditional_unet1d import ConditionalUnet1D
+
 
 from vint_train.data.vint_dataset import ViNT_Dataset
 from vint_train.training.train_eval_loop import (
     train_eval_loop,
+    train_eval_loop_nomad,
     load_model,
-    count_parameters,
 )
 
 
@@ -157,10 +165,60 @@ def main(config):
             mha_num_attention_layers=config["mha_num_attention_layers"],
             mha_ff_dim_factor=config["mha_ff_dim_factor"],
         )
+    elif config["model_type"] == "nomad":
+        if config["vision_encoder"] == "nomad_vint":
+            vision_encoder = NoMaD_ViNT(
+                obs_encoding_size=config["encoding_size"],
+                context_size=config["context_size"],
+                mha_num_attention_heads=config["mha_num_attention_heads"],
+                mha_num_attention_layers=config["mha_num_attention_layers"],
+                mha_ff_dim_factor=config["mha_ff_dim_factor"],
+            )
+            vision_encoder = replace_bn_with_gn(vision_encoder)
+        elif config["vision_encoder"] == "vib": 
+            vision_encoder = ViB(
+                obs_encoding_size=config["encoding_size"],
+                context_size=config["context_size"],
+                mha_num_attention_heads=config["mha_num_attention_heads"],
+                mha_num_attention_layers=config["mha_num_attention_layers"],
+                mha_ff_dim_factor=config["mha_ff_dim_factor"],
+            )
+            vision_encoder = replace_bn_with_gn(vision_encoder)
+        elif config["vision_encoder"] == "vit": 
+            vision_encoder = ViT(
+                obs_encoding_size=config["encoding_size"],
+                context_size=config["context_size"],
+                image_size=config["image_size"],
+                patch_size=config["patch_size"],
+                mha_num_attention_heads=config["mha_num_attention_heads"],
+                mha_num_attention_layers=config["mha_num_attention_layers"],
+            )
+            vision_encoder = replace_bn_with_gn(vision_encoder)
+        else: 
+            raise ValueError(f"Vision encoder {config['vision_encoder']} not supported")
+            
+        noise_pred_net = ConditionalUnet1D(
+                input_dim=2,
+                global_cond_dim=config["encoding_size"],
+                down_dims=config["down_dims"],
+                cond_predict_scale=config["cond_predict_scale"],
+            )
+        dist_pred_network = DenseNetwork(embedding_dim=config["encoding_size"])
+        
+        model = NoMaD(
+            vision_encoder=vision_encoder,
+            noise_pred_net=noise_pred_net,
+            dist_pred_net=dist_pred_network,
+        )
+
+        noise_scheduler = DDPMScheduler(
+            num_train_timesteps=config["num_diffusion_iters"],
+            beta_schedule='squaredcos_cap_v2',
+            clip_sample=True,
+            prediction_type='epsilon'
+        )
     else:
         raise ValueError(f"Model {config['model']} not supported")
-
-    count_parameters(model)  # print number of parameters
 
     if config["clipping"]:
         print("Clipping gradients to", config["max_norm"])
@@ -240,27 +298,53 @@ def main(config):
         if scheduler is not None:
             scheduler.load_state_dict(latest_checkpoint["scheduler"].state_dict())
 
-    train_eval_loop(
-        train_model=config["train"],
-        model=model,
-        optimizer=optimizer,
-        scheduler=scheduler,
-        train_loader=train_loader,
-        test_dataloaders=test_dataloaders,
-        transform=transform,
-        epochs=config["epochs"],
-        device=device,
-        project_folder=config["project_folder"],
-        normalized=config["normalize"],
-        print_log_freq=config["print_log_freq"],
-        image_log_freq=config["image_log_freq"],
-        num_images_log=config["num_images_log"],
-        current_epoch=current_epoch,
-        learn_angle=config["learn_angle"],
-        alpha=config["alpha"],
-        use_wandb=config["use_wandb"],
-        eval_fraction=config["eval_fraction"],
-    )
+    if config["model_type"] == "vint" or config["model_type"] == "gnm": 
+        train_eval_loop(
+            train_model=config["train"],
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            train_loader=train_loader,
+            test_dataloaders=test_dataloaders,
+            transform=transform,
+            epochs=config["epochs"],
+            device=device,
+            project_folder=config["project_folder"],
+            normalized=config["normalize"],
+            print_log_freq=config["print_log_freq"],
+            image_log_freq=config["image_log_freq"],
+            num_images_log=config["num_images_log"],
+            current_epoch=current_epoch,
+            learn_angle=config["learn_angle"],
+            alpha=config["alpha"],
+            use_wandb=config["use_wandb"],
+            eval_fraction=config["eval_fraction"],
+        )
+    else:
+        train_eval_loop_nomad(
+            train_model=config["train"],
+            model=model,
+            optimizer=optimizer,
+            lr_scheduler=scheduler,
+            noise_scheduler=noise_scheduler,
+            train_loader=train_loader,
+            test_dataloaders=test_dataloaders,
+            transform=transform,
+            goal_mask_prob=config["goal_mask_prob"],
+            epochs=config["epochs"],
+            device=device,
+            project_folder=config["project_folder"],
+            print_log_freq=config["print_log_freq"],
+            wandb_log_freq=config["wandb_log_freq"],
+            image_log_freq=config["image_log_freq"],
+            num_images_log=config["num_images_log"],
+            current_epoch=current_epoch,
+            alpha=float(config["alpha"]),
+            use_wandb=config["use_wandb"],
+            eval_fraction=config["eval_fraction"],
+            eval_freq=config["eval_freq"],
+        )
+
     print("FINISHED TRAINING")
 
 

@@ -1,9 +1,10 @@
-name: vint_train
+name: nomad_train
 channels:
+- defaults
 - pytorch
 dependencies:
 - python=3.8.5
-- cudatoolkit=11.
+- cudatoolkit=10.
 - numpy
 - matplotlib
 - ipykernel
@@ -20,6 +21,15 @@ dependencies:
   - rosbag
   - roslz4
   - prettytable
-  - efficientnet_pytorch
-  - warmup_scheduler
-  - lmdb
+  - efficientnet-pytorch
+  - warmup-scheduler
+  - diffusers==0.11.1
+  - lmdb 
+  - vit-pytorch
+  - positional-encodings
+
+
+
+  
+
+

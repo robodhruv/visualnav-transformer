@@ -60,3 +60,6 @@ image_log_freq: 1000 # in iterations
 num_images_log: 8 # number of images to log in a logging iteration
 pairwise_test_freq: 10 # in epochs
 eval_fraction: 0.25 # fraction of the dataset to use for evaluation
+wandb_log_freq: 10 # in iterations
+eval_freq: 1 # in epochs
+

@@ -2,8 +2,8 @@
 # global params for diffusion model
 # normalized min and max
 action_stats:
-  min: [-2.5, -4]
-  max: [5, 4]
+  min: [-2.5, -4] # [min_dx, min_dy]
+  max: [5, 4] # [max_dx, max_dy]
 
 # data specific params
 recon:

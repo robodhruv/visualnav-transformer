@@ -1,9 +1,10 @@
-# ViNT: A Foundation Model for Visual Navigation
-#### Dhruv Shah*, Ajay Sridhar*, Nitish Dashora*, Kyle Stachowicz, Kevin Black, Noriaki Hirose, Sergey Levine
+# General Navigation Models: GNM, ViNT and NoMaD
+
+**Contributors**: Dhruv Shah, Ajay Sridhar, Nitish Dashora, Catherine Glossop, Kyle Stachowicz, Arjun Bhorkar, Kevin Black, Noriaki Hirose, Sergey Levine
 
 _Berkeley AI Research_
 
-[Project Page](https://visualnav-transformer.github.io) | [arXiV](https://arxiv.org/abs/2306.14846) | [Summary Video](https://www.youtube.com/watch?v=6kNex5dJ5sQ)
+[Project Page](https://general-navigation-models.github.io) | [Citing](https://github.com/robodhruv/visualnav-transformer#citing)
 
 ---
 ## Overview
@@ -12,8 +13,10 @@ This repository contains code for training a ViNT with your own data, pre-traine
 - `./train/train.py`: training script to train or fine-tune the ViNT model on your custom data.
 - `./train/vint_train/models/`: contains model files for GNM, ViNT, and some baselines.
 - `./train/process_*.py`: scripts to process rosbags or other formats of robot trajectories into training data.
-- `./deployment/src/record_bag.sh`: script to collect a demo trajectory in the target environment on the robot. This trajectory is subsampled to generate a topological graph of the environment.
-- `./deployment/src/navigate.sh`: script that deploys a trained ViNT model on the robot to navigate to a desired goal in the generated topological graph. Please see relevant sections below for configuration settings.
+- `./deployment/src/record_bag.sh`: script to collect a demo trajectory as a ROS bag in the target environment on the robot. This trajectory is subsampled to generate a topological graph of the environment.
+- `./deployment/src/create_topomap.sh`: script to convert a ROS bag of a demo trajectory into a topological graph that the robot can use to navigate.
+- `./deployment/src/navigate.sh`: script that deploys a trained GNM/ViNT/NoMaD model on the robot to navigate to a desired goal in the generated topological graph. Please see relevant sections below for configuration settings.
+- `./deployment/src/explore.sh`: script that deploys a trained NoMaD model on the robot to randomly explore its environment. Please see relevant sections below for configuration settings.
 
 ## Train
 
@@ -36,6 +39,12 @@ Run the commands below inside the `vint_release/` (topmost) directory:
     ```bash
     pip install -e train/
     ```
+4. Install the `diffusion_policy` package from this [repo](https://github.com/real-stanford/diffusion_policy):
+    ```bash
+    git clone git@github.com:real-stanford/diffusion_policy.git
+    pip install -e diffusion_policy/
+    ```
+
 
 ### Data-Wrangling
 In the [ViNT paper](https://sites.google.com/view/drive-any-robot), we train on a combination of publicly available and unreleased datasets. Below is a list of publicly available datasets used for training; please contact the respective authors for access to the unreleased data.
@@ -163,7 +172,12 @@ This software was tested on a LoCoBot running Ubuntu 20.04.
     ```bash
     pip install -e train/
     ```
-6. (Recommended) Install [tmux](https://github.com/tmux/tmux/wiki/Installing) if not present.
+6. Install the `diffusion_policy` package from this [repo](https://github.com/real-stanford/diffusion_policy):
+    ```bash
+    git clone git@github.com:real-stanford/diffusion_policy.git
+    pip install -e diffusion_policy/
+    ```
+7. (Recommended) Install [tmux](https://github.com/tmux/tmux/wiki/Installing) if not present.
     Many of the bash scripts rely on tmux to launch multiple screens with different commands. This will be useful for debugging because you can see the output of each screen.
 
 #### Hardware Requirements
@@ -209,13 +223,14 @@ When the bag stops playing, kill the tmux session.
 
 
 ### Running the model 
+#### Navigation
 _Make sure to run this script inside the `vint_release/deployment/src/` directory._
 
 ```bash
 ./navigate.sh “--model <model_name> --dir <topomap_dir>”
 ```
 
-To deploy one of the models from the published results, we are releasing model checkpoints that you can download from [this link](TODO).
+To deploy one of the models from the published results, we are releasing model checkpoints that you can download from [this link](https://drive.google.com/drive/folders/1a9yWR2iooXFAqjQHetz263--4_2FFggg?usp=sharing).
 
 
 The `<model_name>` is the name of the model in the `vint_release/deployment/config/models.yaml` file. In this file, you specify these parameters of the model for each model (defaults used):
@@ -235,6 +250,35 @@ This command opens up 4 windows:
 4. `python pd_controller.py`: This python script starts a node that reads messages from the `/waypoint` topic (waypoints from the model) and outputs velocities to navigate the robot’s base.
 
 When the robot is finishing navigating, kill the `pd_controller.py` script, and then kill the tmux session. If you want to take control of the robot while it is navigating, the `joy_teleop.py` script allows you to do so with the joystick.
+
+#### Exploration
+_Make sure to run this script inside the `vint_release/deployment/src/` directory._
+
+```bash
+./exploration.sh “--model <model_name>”
+```
+
+To deploy one of the models from the published results, we are releasing model checkpoints that you can download from [this link](https://drive.google.com/drive/folders/1a9yWR2iooXFAqjQHetz263--4_2FFggg?usp=sharing).
+
+
+The `<model_name>` is the name of the model in the `vint_release/deployment/config/models.yaml` file (note that only NoMaD works for exploration). In this file, you specify these parameters of the model for each model (defaults used):
+- `config_path` (str): path of the *.yaml file in `vint_release/train/config/` used to train the model
+- `ckpt_path` (str): path of the *.pth file in `vint_release/deployment/model_weights/`
+
+
+Make sure these configurations match what you used to train the model. The configurations for the models we provided the weights for are provided in yaml file for your reference.
+
+The `<topomap_dir>` is the name of the directory in `vint_release/deployment/topomaps/images` that has the images corresponding to the nodes in the topological map. The images are ordered by name from 0 to N.
+
+This command opens up 4 windows:
+
+1. `roslaunch vint_locobot.launch`: This launch file opens the usb_cam node for the camera, the joy node for the joystick, and several nodes for the robot’s mobile base.
+2. `python explore.py --model <model_name>`: This python script starts a node that reads in image observations from the `/usb_cam/image_raw` topic, inputs the observations and the map into the model, and publishes exploration actions to the `/waypoint` topic.
+3. `python joy_teleop.py`: This python script starts a node that reads inputs from the joy topic and outputs them on topics that teleoperate the robot’s base.
+4. `python pd_controller.py`: This python script starts a node that reads messages from the `/waypoint` topic (waypoints from the model) and outputs velocities to navigate the robot’s base.
+
+When the robot is finishing navigating, kill the `pd_controller.py` script, and then kill the tmux session. If you want to take control of the robot while it is navigating, the `joy_teleop.py` script allows you to do so with the joystick.
+
 
 ### Adapting this code to different robots
 

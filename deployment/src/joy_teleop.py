@@ -12,8 +12,8 @@ vel_msg = Twist()
 CONFIG_PATH = "../config/robot.yaml"
 with open(CONFIG_PATH, "r") as f:
 	robot_config = yaml.safe_load(f)
-MAX_V = 0.4#robot_config["max_v"]
-MAX_W = 0.8#robot_config["max_w"]
+MAX_V = 0.4
+MAX_W = 0.8
 VEL_TOPIC = robot_config["vel_teleop_topic"]
 JOY_CONFIG_PATH = "../config/joystick.yaml"
 with open(JOY_CONFIG_PATH, "r") as f:
