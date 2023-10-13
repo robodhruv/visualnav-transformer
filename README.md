@@ -7,8 +7,14 @@ _Berkeley AI Research_
 [Project Page](https://general-navigation-models.github.io) | [Citing](https://github.com/robodhruv/visualnav-transformer#citing)
 
 ---
+
+General Navigation Models are general-purpose goal-conditioned visual navigation policies trained on diverse, cross-embodiment training data, and can control many different robots in zero-shot. They can also be efficiently fine-tuned, or adapted, to new robots and downstream tasks. Our family of models is described in the following research papers (and growing):
+1. [GNM: A General Navigation Model to Drive Any Robot](https://sites.google.com/view/drive-any-robot) (_October 2022_, presented at ICRA 2023)
+2. [ViNT: A Foundation Model for Visual Navigation](https://general-navigation-models.github.io/vint/index.html) (_June 2023_, presented at CoRL 2023)
+3. [NoMaD: Goal Masking Diffusion Policies for Navigation and Exploration](https://general-navigation-models.github.io/nomad/index.html) (_October 2023_)
+
 ## Overview
-This repository contains code for training a ViNT with your own data, pre-trained model checkpoints, as well as example code to deploy it on a TurtleBot2/LoCoBot robot. The repository follows the organization from [GNM](https://github.com/PrieureDeSion/drive-any-robot).
+This repository contains code for training our family of models with your own data, pre-trained model checkpoints, as well as example code to deploy it on a TurtleBot2/LoCoBot robot. The repository follows the organization from [GNM](https://github.com/PrieureDeSion/drive-any-robot).
 
 - `./train/train.py`: training script to train or fine-tune the ViNT model on your custom data.
 - `./train/vint_train/models/`: contains model files for GNM, ViNT, and some baselines.
@@ -20,7 +26,7 @@ This repository contains code for training a ViNT with your own data, pre-traine
 
 ## Train
 
-This subfolder contains code for processing datasets and training a ViNT from your own data.
+This subfolder contains code for processing datasets and training models from your own data.
 
 ### Pre-requisites
 
@@ -47,7 +53,7 @@ Run the commands below inside the `vint_release/` (topmost) directory:
 
 
 ### Data-Wrangling
-In the [ViNT paper](https://sites.google.com/view/drive-any-robot), we train on a combination of publicly available and unreleased datasets. Below is a list of publicly available datasets used for training; please contact the respective authors for access to the unreleased data.
+In the [papers](https://general-navigation-models.github.io), we train on a combination of publicly available and unreleased datasets. Below is a list of publicly available datasets used for training; please contact the respective authors for access to the unreleased data.
 - [RECON](https://sites.google.com/view/recon-robot/dataset)
 - [TartanDrive](https://github.com/castacks/tartan_drive)
 - [SCAND](https://www.cs.utexas.edu/~xiao/SCAND/SCAND.html#Links)
@@ -102,7 +108,7 @@ After step 2 of data processing, the processed data-split should the following s
         └── traj_names.txt 
 ``` 
 
-### Training your ViNT
+### Training your General Navigation Models
 Run this inside the `vint_release/train` directory:
 ```bash
 python train.py -c <path_of_train_config_file>
@@ -131,7 +137,7 @@ Locate your training config file and add the following text under the `datasets`
     negative_mining: True # negative mining from the ViNG paper (Shah et al.)
 ```
 
-#### Training your ViNT from a checkpoint
+#### Training your model from a checkpoint
 Instead of training from scratch, you can also load an existing checkpoint from the published results.
 Add `load_run: <project_name>/<log_run_name>`to your .yaml config file in `vint_release/train/config/`. The `*.pth` of the file you are loading to be saved in this file structure and renamed to “latest”: `vint_release/train/logs/<project_name>/<log_run_name>/latest.pth`. This makes it easy to train from the checkpoint of a previous run since logs are saved this way by default. Note: if you are loading a checkpoint from a previous run, check for the name the run in the `vint_release/train/logs/<project_name>/`, since the code appends a string of the date to each run_name specified in the config yaml file of the run to avoid duplicate run names. 
 
@@ -287,12 +293,27 @@ We hope that this codebase is general enough to allow you to deploy it to your f
 
 ## Citing
 ```
-@article{shah2023vint,
-  author    = {Dhruv Shah and Ajay Sridhar and Nitish Dashora 
-               and Kyle Stachowicz and Kevin Black and Noriaki Hirose and Sergey Levine},
-  title     = {{ViNT: A Foundation Model for Visual Navigation}},
-  journal   = {arXiv pre-print},
+@inproceedings{shah2022gnm,
+  author    = {Dhruv Shah and Ajay Sridhar and Arjun Bhorkar and Noriaki Hirose and Sergey Levine},
+  title     = {{GNM: A General Navigation Model to Drive Any Robot}},
+  booktitle = {International Conference on Robotics and Automation (ICRA)},
   year      = {2023},
-  url       = {https://arxiv.org/abs/2306.14846},
+  url       = {https://arxiv.org/abs/2210.03370}
+}
+
+@inproceedings{shah2023vint,
+  title     = {Vi{NT}: A Foundation Model for Visual Navigation},
+  author    = {Dhruv Shah and Ajay Sridhar and Nitish Dashora and Kyle Stachowicz and Kevin Black and Noriaki Hirose and Sergey Levine},
+  booktitle = {7th Annual Conference on Robot Learning},
+  year      = {2023},
+  url       = {https://arxiv.org/abs/2306.14846}
+}
+
+@article{sridhar2023nomad,
+  author  = {Ajay Sridhar and Dhruv Shah and Catherine Glossop and Sergey Levine},
+  title   = {{NoMaD: Goal Masked Diffusion Policies for Navigation and Exploration}},
+  journal = {arXiv pre-print},
+  year    = {2023},
+  url     = {https://arxiv.org/abs/2310.xxxx}
 }
 ```

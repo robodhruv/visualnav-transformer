@@ -103,6 +103,7 @@ datasets:
 
 
 # logging stuff
+## =0 turns off
 print_log_freq: 100 # in iterations
 image_log_freq: 1000 # in iterations
 num_images_log: 8 # number of images to log in a logging iteration
