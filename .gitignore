@@ -3,6 +3,7 @@ train/datasets/*
 train/vint_train/data/data_splits/*
 train/wandb/*
 train/gnm_dataset/*
+*_test.yaml
 
 *.png
 *.jpg

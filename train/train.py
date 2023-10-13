@@ -304,7 +304,7 @@ def main(config):
             model=model,
             optimizer=optimizer,
             scheduler=scheduler,
-            train_loader=train_loader,
+            dataloader=train_loader,
             test_dataloaders=test_dataloaders,
             transform=transform,
             epochs=config["epochs"],
