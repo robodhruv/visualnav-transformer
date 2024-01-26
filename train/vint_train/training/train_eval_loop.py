@@ -282,15 +282,19 @@ def train_eval_loop_nomad(
     wandb.log({})
     print()
 
-def load_model(model, checkpoint: dict) -> None:
+def load_model(model, model_type, checkpoint: dict) -> None:
     """Load model from checkpoint."""
-    loaded_model = checkpoint["model"]
-    try:  # for DataParallel
-        state_dict = loaded_model.module.state_dict()
-        model.load_state_dict(state_dict)
-    except (RuntimeError, AttributeError) as e:
-        state_dict = loaded_model.state_dict()
-        model.load_state_dict(state_dict)
+    if model_type == "nomad":
+        state_dict = checkpoint
+        model.load_state_dict(state_dict, strict=False)
+    else:
+        loaded_model = checkpoint["model"]
+        try:
+            state_dict = loaded_model.module.state_dict()
+            model.load_state_dict(state_dict, strict=False)
+        except AttributeError as e:
+            state_dict = loaded_model.state_dict()
+            model.load_state_dict(state_dict, strict=False)
 
 
 def load_ema_model(ema_model, state_dict: dict) -> None:

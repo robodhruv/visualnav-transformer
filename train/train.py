@@ -285,8 +285,9 @@ def main(config):
         print("Loading model from ", load_project_folder)
         latest_path = os.path.join(load_project_folder, "latest.pth")
         latest_checkpoint = torch.load(latest_path) #f"cuda:{}" if torch.cuda.is_available() else "cpu")
-        load_model(model, latest_checkpoint)
-        current_epoch = latest_checkpoint["epoch"] + 1
+        load_model(model, config["model_type"], latest_checkpoint)
+        if "epoch" in latest_checkpoint:
+            current_epoch = latest_checkpoint["epoch"] + 1
 
     # Multi-GPU
     if len(config["gpu_ids"]) > 1:
@@ -294,8 +295,9 @@ def main(config):
     model = model.to(device)
 
     if "load_run" in config:  # load optimizer and scheduler after data parallel
-        optimizer.load_state_dict(latest_checkpoint["optimizer"].state_dict())
-        if scheduler is not None:
+        if "optimizer" in latest_checkpoint:
+            optimizer.load_state_dict(latest_checkpoint["optimizer"].state_dict())
+        if scheduler is not None and "scheduler" in latest_checkpoint:
             scheduler.load_state_dict(latest_checkpoint["scheduler"].state_dict())
 
     if config["model_type"] == "vint" or config["model_type"] == "gnm": 
