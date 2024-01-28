@@ -161,11 +161,9 @@ def get_images_and_odom(
     synced_odomdata = []
     # get start time of bag in seconds
     currtime = bag.get_start_time()
-    starttime = currtime
 
     curr_imdata = None
     curr_odomdata = None
-    times = []
 
     for topic, msg, t in bag.read_messages(topics=[imtopic, odomtopic]):
         if topic == imtopic:
@@ -176,8 +174,7 @@ def get_images_and_odom(
             if curr_imdata is not None and curr_odomdata is not None:
                 synced_imdata.append(curr_imdata)
                 synced_odomdata.append(curr_odomdata)
-            currtime = t.to_sec()
-            times.append(currtime - starttime)
+                currtime = t.to_sec()
 
     img_data = process_images(synced_imdata, img_process_func)
     traj_data = process_odom(
