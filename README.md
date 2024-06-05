@@ -164,7 +164,7 @@ This software was tested on a LoCoBot running Ubuntu 20.04.
     - Install anaconda/miniconda/etc. for managing environments
     - Make conda env with environment.yml (run this inside the `vint_release/` directory)
         ```bash
-        conda env create -f deployment/deployment_environment.yml
+        conda env create -f deployment/deployment_environment.yaml
         ```
     - Source env 
         ```bash
