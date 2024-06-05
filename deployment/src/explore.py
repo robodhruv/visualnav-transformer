@@ -113,8 +113,6 @@ def main(args: argparse.Namespace):
             ):
 
             obs_images = transform_images(context_queue, model_params["image_size"], center_crop=False)
-            obs_images = torch.split(obs_images, 3, dim=1)
-            obs_images = torch.cat(obs_images, dim=1)
             obs_images = obs_images.to(device)
             fake_goal = torch.randn((1, 3, *model_params["image_size"])).to(device)
             mask = torch.ones(1).long().to(device) # ignore the goal
