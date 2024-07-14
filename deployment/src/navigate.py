@@ -192,7 +192,7 @@ def main(args: argparse.Namespace):
                 sampled_actions_pub.publish(sampled_actions_msg)
                 naction = naction[0] 
                 chosen_waypoint = naction[args.waypoint]
-            elif (len(context_queue) > model_params["context_size"]):
+            else:
                 start = max(closest_node - args.radius, 0)
                 end = min(closest_node + args.radius + 1, goal_node)
                 distances = []
@@ -213,15 +213,15 @@ def main(args: argparse.Namespace):
                 distances = to_numpy(distances)
                 waypoints = to_numpy(waypoints)
                 # look for closest node
-                closest_node = np.argmin(distances)
+                min_dist_idx = np.argmin(distances)
                 # chose subgoal and output waypoints
-                if distances[closest_node] > args.close_threshold:
-                    chosen_waypoint = waypoints[closest_node][args.waypoint]
-                    sg_img = topomap[start + closest_node]
+                if distances[min_dist_idx] > args.close_threshold:
+                    chosen_waypoint = waypoints[min_dist_idx][args.waypoint]
+                    closest_node = start + min_dist_idx
                 else:
                     chosen_waypoint = waypoints[min(
-                        closest_node + 1, len(waypoints) - 1)][args.waypoint]
-                    sg_img = topomap[start + min(closest_node + 1, len(waypoints) - 1)]     
+                        min_dist_idx + 1, len(waypoints) - 1)][args.waypoint]
+                    closest_node = min(start + min_dist_idx + 1, goal_node)
         # RECOVERY MODE
         if model_params["normalize"]:
             chosen_waypoint[:2] *= (MAX_V / RATE)  
