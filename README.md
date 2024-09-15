@@ -57,7 +57,7 @@ In the [papers](https://general-navigation-models.github.io), we train on a comb
 - [RECON](https://sites.google.com/view/recon-robot/dataset)
 - [TartanDrive](https://github.com/castacks/tartan_drive)
 - [SCAND](https://www.cs.utexas.edu/~xiao/SCAND/SCAND.html#Links)
-- [GoStanford2 (Modified)](https://drive.google.com/drive/folders/1xrNvMl5q92oWed99noOt_UhqQnceJYV0?usp=share_link)
+- [GoStanford2 (Modified)](https://drive.google.com/drive/folders/1RYseCpbtHEFOsmSX2uqNY_kvSxwZLVP_?usp=sharing)
 - [SACSoN/HuRoN](https://sites.google.com/view/sacson-review/huron-dataset)
 
 We recommend you to download these (and any other datasets you may want to train on) and run the processing steps below.
